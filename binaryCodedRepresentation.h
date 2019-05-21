@@ -30,7 +30,8 @@ private:
     bool isLetterInRange(char);
     void setBinaryRepresentation();
     void fillBinaryCodedArray();
-    void convertToBinary(char);
+    void fillSlotAtGivenPosition(int, int);
+    int getDecimalRepresentation(char);
 public:
     BinaryCodedRepresentation(const std::string& number = "0");
 };
@@ -81,9 +82,9 @@ int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getMinimumNumberO
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::isStringCorrect(const std::string& number)
 {
-    for( char i : number ) //for every char in given string
+    for( char ch : number ) //for every char in given string
     {
-        if( !isalnum(i) || !isCharacterInRange(i) ) //check if it's alphanumeric and if it's available character
+        if( !isalnum(ch) || !isCharacterInRange(ch) ) //check if it's alphanumeric and if it's available character
             return false;
     }
     return true;
@@ -131,22 +132,45 @@ void BinaryCodedRepresentation<numeral_system, bits_per_digit>::setBinaryReprese
         binaryRepresentation[i] = new int[bitsPerDigit];
     }
 
-    fillBinaryCodedArray(width); //filling array with proper digits
+    fillBinaryCodedArray(/*width*/); //filling array with proper digits
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 void BinaryCodedRepresentation<numeral_system, bits_per_digit>::fillBinaryCodedArray()
 {
-    for( char ch : originalRepresentation )
+    int decimalToConvert;
+    for( int i = 0; i < originalRepresentation.size(); ++i )
     {
-        convertToBinary(ch);
+        decimalToConvert = getDecimalRepresentation( originalRepresentation.at(i) );
+        fillSlotAtGivenPosition(decimalToConvert, i);
     }
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
-void BinaryCodedRepresentation<numeral_system, bits_per_digit>::convertToBinary(char ch)
+void BinaryCodedRepresentation<numeral_system, bits_per_digit>::fillSlotAtGivenPosition(int decimal, int position)
 {
-    if( isdigit(ch) ) //get number nevertheless if number or letter
+    //fill in such way that the index of array is equivalent to power of 2
+    for( int i = 0; i < bitsPerDigit; ++i )
+    {
+        binaryRepresentation[position][i] = decimal % 2; /* TODO << operator */
+        if( decimal >= 1 )
+            decimal = decimal / 2;
+        //else, do nothing it's already 0
+    }
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getDecimalRepresentation(char ch)
+{
+    int retValue;
+    if( isdigit( static_cast<unsigned char>(ch) ) )
+        retValue = ch - ( DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT + 1 );
+    else
+    {
+        ch = static_cast<char>( tolower(static_cast<unsigned char>(ch) ) );
+        retValue = ch - ( DISTANCE_BETWEEN_BASE_AND_LAST_CHARACTER + 1 );
+    }
+    return retValue;
 }
 
 
