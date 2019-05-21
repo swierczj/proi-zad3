@@ -3,6 +3,7 @@
 #define MAX_NUMERAL_SYSTEM 36 //alphanuemerical chars, non-case sensitive
 #define MIN_NUMERAL_SYSTEM 2 //unary system is useless
 #define DISTANCE_BETWEEN_BASE_AND_LAST_CHARACTER 86 //used for lower case
+#define DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT 47
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -17,8 +18,8 @@ class BinaryCodedRepresentation
 private:
     std::string originalRepresentation;
     int** binaryRepresentation;
-    int systemBase;
-    int bitsPerDigit;
+    long systemBase;
+    long bitsPerDigit;
     bool isInputCorrect(const std::string&);
     bool areTemplateArgumentsCorrect();
     bool isBaseCorrect();
@@ -27,18 +28,24 @@ private:
     bool isStringCorrect(const std::string&);
     bool isCharacterInRange(char);
     bool isLetterInRange(char);
-
+    void setBinaryRepresentation();
+    void fillBinaryCodedArray();
+    void convertToBinary(char);
 public:
     BinaryCodedRepresentation(const std::string& number = "0");
 };
 
-/* --------- TEMPLATE IMPLEMENTATION --------- */
+/* --------- TEMPLATE METHODS IMPLEMENTATION --------- */
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(const std::string& number)
 {
     if( !isInputCorrect(number) )
         throw std::runtime_error("incorrect number given");
+    systemBase = numeral_system;
+    bitsPerDigit = bits_per_digit;
+    originalRepresentation = number;
+    setBinaryRepresentation();
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
@@ -88,16 +95,19 @@ bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::isCharacterInRan
     if( numeral_system <= 10 ) //only digits can appear
     {
         if( isdigit( static_cast<unsigned char>(character) ) )
-            return character < numeral_system; //return for systems containing only digits
+        {
+            /*auto testNumSys = numeral_system + DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT;
+            int testChar = character;*/
+            return character < numeral_system + DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT; //return for systems containing only digits
+        }
 
         return false; //if numeral system but not a digit found then return false
     }
     else
     {
         if( !isdigit( static_cast<unsigned char>(character) ) ) //if letter
-        {
             return isLetterInRange(character); //check if temp has correct value
-        }
+
         return true; //if digit then it's true
     }
 }
@@ -109,5 +119,35 @@ bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::isLetterInRange(
     return numeral_system + DISTANCE_BETWEEN_BASE_AND_LAST_CHARACTER >= ch; //hopefully it works, e.g base is 11 then last char is 'a'
     //and 'a' number in ascii is 97, for 'b' and greater it returns false
 }
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+void BinaryCodedRepresentation<numeral_system, bits_per_digit>::setBinaryRepresentation()
+{
+    auto width = originalRepresentation.size();
+    binaryRepresentation = new int*[width]; // array of pointers for every digit
+
+    for(int i = 0; i < width; i++) //matrix creation
+    {
+        binaryRepresentation[i] = new int[bitsPerDigit];
+    }
+
+    fillBinaryCodedArray(width); //filling array with proper digits
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+void BinaryCodedRepresentation<numeral_system, bits_per_digit>::fillBinaryCodedArray()
+{
+    for( char ch : originalRepresentation )
+    {
+        convertToBinary(ch);
+    }
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+void BinaryCodedRepresentation<numeral_system, bits_per_digit>::convertToBinary(char ch)
+{
+    if( isdigit(ch) ) //get number nevertheless if number or letter
+}
+
 
 #endif //PROI2_BINARYCODEDREPRESENTATION_H

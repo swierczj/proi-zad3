@@ -4,7 +4,7 @@
 
 int main()
 {
-    BinaryCodedRepresentation<3, 3> testBCR;
+    BinaryCodedRepresentation<5, 11> testBCR("023"); //check if correct
     std::cout << "Hello, World!" << std::endl;
     return 0;
 }
