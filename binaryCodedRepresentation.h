@@ -13,6 +13,13 @@
 #include <cctype>
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
+class BinaryCodedRepresentation;
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+std::ostream& operator<<(std::ostream&, const BinaryCodedRepresentation<numeral_system, bits_per_digit>&);
+
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
 class BinaryCodedRepresentation
 {
 private:
@@ -32,8 +39,11 @@ private:
     void fillBinaryCodedArray();
     void fillSlotAtGivenPosition(int, int);
     int getDecimalRepresentation(char);
+    std::string reduceGivenNumber(const std::string&);
 public:
     BinaryCodedRepresentation(const std::string& number = "0");
+    friend std::ostream& operator<< <numeral_system, bits_per_digit>(std::ostream&, const BinaryCodedRepresentation&);
+
 };
 
 /* --------- TEMPLATE METHODS IMPLEMENTATION --------- */
@@ -45,7 +55,8 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresenta
         throw std::runtime_error("incorrect number given");
     systemBase = numeral_system;
     bitsPerDigit = bits_per_digit;
-    originalRepresentation = number;
+    originalRepresentation = reduceGivenNumber(number);
+
     setBinaryRepresentation();
 }
 
@@ -99,7 +110,7 @@ bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::isCharacterInRan
         {
             /*auto testNumSys = numeral_system + DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT;
             int testChar = character;*/
-            return character < numeral_system + DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT; //return for systems containing only digits
+            return character <= numeral_system + DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT; //return for systems containing only digits
         }
 
         return false; //if numeral system but not a digit found then return false
@@ -125,14 +136,13 @@ template <unsigned long numeral_system, unsigned long bits_per_digit>
 void BinaryCodedRepresentation<numeral_system, bits_per_digit>::setBinaryRepresentation()
 {
     auto width = originalRepresentation.size();
-    binaryRepresentation = new int*[width]; // array of pointers for every digit
+    binaryRepresentation = new int*[width]; // array of pointers for every digit /*TODO PREVENT LEAKS */
 
     for(int i = 0; i < width; i++) //matrix creation
     {
         binaryRepresentation[i] = new int[bitsPerDigit];
     }
-
-    fillBinaryCodedArray(/*width*/); //filling array with proper digits
+    fillBinaryCodedArray(); //filling array with proper digits
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
@@ -152,7 +162,7 @@ void BinaryCodedRepresentation<numeral_system, bits_per_digit>::fillSlotAtGivenP
     //fill in such way that the index of array is equivalent to power of 2
     for( int i = 0; i < bitsPerDigit; ++i )
     {
-        binaryRepresentation[position][i] = decimal % 2; /* TODO << operator */
+        binaryRepresentation[position][i] = decimal % 2;
         if( decimal >= 1 )
             decimal = decimal / 2;
         //else, do nothing it's already 0
@@ -173,5 +183,34 @@ int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getDecimalReprese
     return retValue;
 }
 
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+std::string BinaryCodedRepresentation<numeral_system, bits_per_digit>::reduceGivenNumber(const std::string& to_reduce)
+{
+    if( to_reduce.at(0) != '0' || to_reduce.size() == 1 )
+        return to_reduce;
+
+    int zerosCounter = 0;
+    for( int i = 0; i < to_reduce.size(); ++i)
+    {
+        if( to_reduce.at(i) != '0' || i == to_reduce.size() - 1 ) //second cond. may be unnecessary, put it in for break cond.(?)
+            break;
+        ++zerosCounter;
+    }
+
+    return std::string( to_reduce.substr( zerosCounter ) );
+}
+
+/* -------------- FRIEND FUNCTIONS -------------- */
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+std::ostream& operator<<(std::ostream& os, const BinaryCodedRepresentation<numeral_system, bits_per_digit>& object)
+{
+    for( int i = 0; i < object.originalRepresentation.size(); ++i )
+    {
+        for ( int j = object.bitsPerDigit - 1; j >= 0; --j )
+            os << object.binaryRepresentation[i][j];
+        os << " ";
+    }
+    return os;
+}
 
 #endif //PROI2_BINARYCODEDREPRESENTATION_H
