@@ -42,6 +42,9 @@ private:
     std::string reduceGivenNumber(const std::string&);
 public:
     BinaryCodedRepresentation(const std::string& number = "0");
+    BinaryCodedRepresentation(unsigned int number = 0) : BinaryCodedRepresentation( std::to_string(number) ) {};
+    BinaryCodedRepresentation(const BinaryCodedRepresentation&);
+    unsigned int getDecimalValue();
     friend std::ostream& operator<< <numeral_system, bits_per_digit>(std::ostream&, const BinaryCodedRepresentation&);
 
 };
@@ -52,10 +55,30 @@ template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(const std::string& number)
 {
     if( !isInputCorrect(number) )
-        throw std::runtime_error("incorrect number given");
+        throw std::runtime_error("incorrect number given or template args don't meet requirements");
     systemBase = numeral_system;
     bitsPerDigit = bits_per_digit;
     originalRepresentation = reduceGivenNumber(number);
+
+    setBinaryRepresentation();
+}
+
+/*template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(unsigned int number)
+: BinaryCodedRepresentation( std::to_string(number) )
+{
+    worked
+}
+*/
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(const BinaryCodedRepresentation& other)
+{
+    if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements
+        throw std::runtime_error("incorrect number given or template args don't meet requirements in copy ctor");
+    systemBase = numeral_system;
+    bitsPerDigit = bits_per_digit;
+    originalRepresentation = reduceGivenNumber(other.originalRepresentation);
 
     setBinaryRepresentation();
 }
@@ -87,7 +110,7 @@ bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::isNumberOfBitsCo
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getMinimumNumberOfBitsPerDigit()
 {
-    return static_cast<int>( floor( log2(numeral_system) ) ) + 1;
+    return static_cast<int>( floor( log2( numeral_system - 1 ) ) ) + 1; //was log2(numeral_system)+1 but it's needed to calculate number of bits for maximum number in given system
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
@@ -198,6 +221,23 @@ std::string BinaryCodedRepresentation<numeral_system, bits_per_digit>::reduceGiv
     }
 
     return std::string( to_reduce.substr( zerosCounter ) );
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+unsigned int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getDecimalValue()
+{
+    double retValue = 0;
+    double slotValue = 0;
+    for( int i = 0; i < originalRepresentation.size(); ++i )
+    {
+        for(int j = 0; j < bitsPerDigit; ++j)
+        {
+            slotValue = slotValue + binaryRepresentation[i][j] * pow(2, j); //will be ok
+        }
+        retValue = retValue + slotValue * pow( systemBase, originalRepresentation.size() - i - 1 ); //ogRep.size()-i-1 since array indexes are opposite to powers
+        slotValue = 0;
+    }
+    return static_cast<unsigned int> (retValue);
 }
 
 /* -------------- FRIEND FUNCTIONS -------------- */
