@@ -27,6 +27,7 @@ private:
     int** binaryRepresentation;
     long systemBase;
     long bitsPerDigit;
+
     bool isInputCorrect(const std::string&);
     bool areTemplateArgumentsCorrect();
     bool isBaseCorrect();
@@ -38,13 +39,22 @@ private:
     void setBinaryRepresentation();
     void fillBinaryCodedArray();
     void fillSlotAtGivenPosition(int, int);
-    int getDecimalRepresentation(char);
+    int getCharacterDecimalRepresentation(char);
     std::string reduceGivenNumber(const std::string&);
+    void deleteBinaryRepArrays();
+    void assignObjectToNumber(const std::string&);
 public:
     BinaryCodedRepresentation(const std::string& number = "0");
     BinaryCodedRepresentation(unsigned int number = 0) : BinaryCodedRepresentation( std::to_string(number) ) {};
     BinaryCodedRepresentation(const BinaryCodedRepresentation&);
+    BinaryCodedRepresentation(BinaryCodedRepresentation&&);
+    ~BinaryCodedRepresentation();
+
     unsigned int getDecimalValue();
+
+    BinaryCodedRepresentation& operator=(const BinaryCodedRepresentation&);
+    BinaryCodedRepresentation& operator=(BinaryCodedRepresentation&&);
+
     friend std::ostream& operator<< <numeral_system, bits_per_digit>(std::ostream&, const BinaryCodedRepresentation&);
 
 };
@@ -74,13 +84,40 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresenta
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(const BinaryCodedRepresentation& other)
 {
-    if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements
+    if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements, maybe unnecessary
         throw std::runtime_error("incorrect number given or template args don't meet requirements in copy ctor");
     systemBase = numeral_system;
     bitsPerDigit = bits_per_digit;
     originalRepresentation = reduceGivenNumber(other.originalRepresentation);
 
     setBinaryRepresentation();
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(BinaryCodedRepresentation&& other)
+{
+    if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements, maybe unnecessary
+        throw std::runtime_error("incorrect number given or template args don't meet requirements in copy rRef ctor");
+    systemBase = numeral_system;
+    bitsPerDigit = bits_per_digit;
+    originalRepresentation = reduceGivenNumber(other.originalRepresentation); //maybe unnecessary
+    setBinaryRepresentation();
+
+    //everything set now clear the other object
+    other.deleteBinaryRepArrays();
+
+    other.systemBase = 0;
+    other.originalRepresentation.clear();
+    other.bitsPerDigit = 0;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>::~BinaryCodedRepresentation()
+{
+    deleteBinaryRepArrays();
+    systemBase = 0;
+    originalRepresentation.clear();
+    bitsPerDigit = 0;
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
@@ -174,7 +211,7 @@ void BinaryCodedRepresentation<numeral_system, bits_per_digit>::fillBinaryCodedA
     int decimalToConvert;
     for( int i = 0; i < originalRepresentation.size(); ++i )
     {
-        decimalToConvert = getDecimalRepresentation( originalRepresentation.at(i) );
+        decimalToConvert = getCharacterDecimalRepresentation( originalRepresentation.at(i) );
         fillSlotAtGivenPosition(decimalToConvert, i);
     }
 }
@@ -193,7 +230,7 @@ void BinaryCodedRepresentation<numeral_system, bits_per_digit>::fillSlotAtGivenP
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
-int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getDecimalRepresentation(char ch)
+int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getCharacterDecimalRepresentation(char ch)
 {
     int retValue;
     if( isdigit( static_cast<unsigned char>(ch) ) )
@@ -238,6 +275,55 @@ unsigned int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getDecim
         slotValue = 0;
     }
     return static_cast<unsigned int> (retValue);
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+void BinaryCodedRepresentation<numeral_system, bits_per_digit>::deleteBinaryRepArrays()
+{
+    for( int i = 0; i < originalRepresentation.size(); ++i )
+    {
+        delete[] binaryRepresentation[i];
+        binaryRepresentation[i] = nullptr;
+    }
+
+    delete[] binaryRepresentation;
+    binaryRepresentation = nullptr;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+void BinaryCodedRepresentation<numeral_system, bits_per_digit>::assignObjectToNumber(const std::string& number)
+{
+    deleteBinaryRepArrays();
+    //system base and bitsPerDigit remains the same
+    //if assigning to other existing object then it's ensured that number must be correct
+    originalRepresentation = number;
+    setBinaryRepresentation();
+}
+
+/* -------------- OPERATORS -------------- */
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(
+    const BinaryCodedRepresentation& rhs)
+{
+    if(this != &rhs && originalRepresentation != rhs.originalRepresentation) //if two BCNums are equal then don't copy
+        assignObjectToNumber( rhs.originalRepresentation );
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(
+    BinaryCodedRepresentation&& rhs)
+{
+    if(this != &rhs && originalRepresentation != rhs.originalRepresentation) //if two BCNums are equal then don't copy
+    {
+        assignObjectToNumber(rhs.originalRepresentation);
+
+        rhs.deleteBinaryRepArrays();
+        rhs.systemBase = 0;
+        rhs.originalRepresentation.clear();
+        rhs.bitsPerDigit = 0;
+    }
+    return *this;
 }
 
 /* -------------- FRIEND FUNCTIONS -------------- */
