@@ -8,10 +8,12 @@ int main()
     //char ch = '1';
     //isdigit( static_cast<unsigned char>(ch) );
     //int t = static_cast<int>(ch);
+    std::string x = "120";
     BinaryCodedRepresentation<16, 4> testBCR("f1"); //check if correct
-    BinaryCodedRepresentation<16, 4> testBCRCopy(testBCR);
+    BinaryCodedRepresentation<8, 4> testBCRoperators = "10";
+    //testBCRoperators = "140";
 
-    std::cout << testBCRCopy << std::endl
-              << testBCRCopy.getDecimalValue() << std::endl;
+    std::cout << testBCR.getDecimalValue() << " to " << testBCR << std::endl
+              << testBCRoperators.getDecimalValue() << std::endl;
     return 0;
 }

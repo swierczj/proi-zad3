@@ -44,16 +44,23 @@ private:
     void deleteBinaryRepArrays();
     void assignObjectToNumber(const std::string&);
 public:
-    BinaryCodedRepresentation(const std::string& number = "0");
-    BinaryCodedRepresentation(unsigned int number = 0) : BinaryCodedRepresentation( std::to_string(number) ) {};
+    explicit BinaryCodedRepresentation(const std::string& number = "0");
+    explicit BinaryCodedRepresentation(unsigned int number = 0) : BinaryCodedRepresentation( std::to_string(number) ) {}; //explicit due to implicit conversion from const char* to unsigned int
+    BinaryCodedRepresentation(const char* number = "0") : BinaryCodedRepresentation( std::string(number) ) {}; //not marked explicit due to above fact(surprising behaviour)
     BinaryCodedRepresentation(const BinaryCodedRepresentation&);
-    BinaryCodedRepresentation(BinaryCodedRepresentation&&);
+    BinaryCodedRepresentation(BinaryCodedRepresentation&&) noexcept;
     ~BinaryCodedRepresentation();
 
     unsigned int getDecimalValue();
 
     BinaryCodedRepresentation& operator=(const BinaryCodedRepresentation&);
-    BinaryCodedRepresentation& operator=(BinaryCodedRepresentation&&);
+    BinaryCodedRepresentation& operator=(BinaryCodedRepresentation&&) noexcept;
+    BinaryCodedRepresentation& operator=(unsigned int);
+    BinaryCodedRepresentation& operator=(const std::string&);
+
+    bool operator==(const BinaryCodedRepresentation&) const;
+    bool operator==(int) const;
+    //BinaryCodedRepresentation& operator=(const char*); //didn't pass tests like obj = "120"
 
     friend std::ostream& operator<< <numeral_system, bits_per_digit>(std::ostream&, const BinaryCodedRepresentation&);
 
@@ -94,7 +101,7 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresenta
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
-BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(BinaryCodedRepresentation&& other)
+BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(BinaryCodedRepresentation&& other) noexcept
 {
     if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements, maybe unnecessary
         throw std::runtime_error("incorrect number given or template args don't meet requirements in copy rRef ctor");
@@ -196,7 +203,7 @@ template <unsigned long numeral_system, unsigned long bits_per_digit>
 void BinaryCodedRepresentation<numeral_system, bits_per_digit>::setBinaryRepresentation()
 {
     auto width = originalRepresentation.size();
-    binaryRepresentation = new int*[width]; // array of pointers for every digit /*TODO PREVENT LEAKS */
+    binaryRepresentation = new int*[width]; // array of pointers for every digit
 
     for(int i = 0; i < width; i++) //matrix creation
     {
@@ -312,7 +319,7 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresenta
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(
-    BinaryCodedRepresentation&& rhs)
+    BinaryCodedRepresentation&& rhs) noexcept
 {
     if(this != &rhs && originalRepresentation != rhs.originalRepresentation) //if two BCNums are equal then don't copy
     {
@@ -326,6 +333,40 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresenta
     return *this;
 }
 
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(unsigned int numberInt)
+{
+    BinaryCodedRepresentation<numeral_system, bits_per_digit> temp(numberInt); //not most efficient
+    *this = temp;
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(const std::string& numberString)
+{
+    BinaryCodedRepresentation<numeral_system, bits_per_digit> temp(numberString); //not most efficient too
+    *this = temp;
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator==(const BinaryCodedRepresentation& rhs) const
+{
+    return getDecimalValue() == rhs.getDecimalValue();
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator==(int rhsInt) const
+{
+    return getDecimalValue() == rhs.getDecimalValue();
+}
+/*template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(const char* numberLiteral)
+{
+    operator=( std::string(numberLiteral) );
+    return *this;
+}
+*/
 /* -------------- FRIEND FUNCTIONS -------------- */
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 std::ostream& operator<<(std::ostream& os, const BinaryCodedRepresentation<numeral_system, bits_per_digit>& object)
