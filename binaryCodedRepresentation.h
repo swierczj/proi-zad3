@@ -15,6 +15,9 @@
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 class BinaryCodedRepresentation;
 
+//template <unsigned long numeral_system, unsigned long bits_per_digit>
+//bool operator==(int, const BinaryCodedRepresentation<numeral_system, bits_per_digit>&);
+
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 std::ostream& operator<<(std::ostream&, const BinaryCodedRepresentation<numeral_system, bits_per_digit>&);
 
@@ -51,16 +54,19 @@ public:
     BinaryCodedRepresentation(BinaryCodedRepresentation&&) noexcept;
     ~BinaryCodedRepresentation();
 
-    unsigned int getDecimalValue();
+    unsigned int getDecimalValue() const;
 
     BinaryCodedRepresentation& operator=(const BinaryCodedRepresentation&);
     BinaryCodedRepresentation& operator=(BinaryCodedRepresentation&&) noexcept;
     BinaryCodedRepresentation& operator=(unsigned int);
     BinaryCodedRepresentation& operator=(const std::string&);
+    //BinaryCodedRepresentation& operator=(const char*); //didn't pass tests like obj = "120"
 
     bool operator==(const BinaryCodedRepresentation&) const;
     bool operator==(int) const;
-    //BinaryCodedRepresentation& operator=(const char*); //didn't pass tests like obj = "120"
+    bool operator==(const std::string&) const;
+    friend bool operator==(int lhsInt, const BinaryCodedRepresentation& rhsBCR) { return rhsBCR.operator==(lhsInt); }
+    friend bool operator==(const std::string& lhsString, const BinaryCodedRepresentation& rhsBCR) { return rhsBCR.operator=(lhsString); }
 
     friend std::ostream& operator<< <numeral_system, bits_per_digit>(std::ostream&, const BinaryCodedRepresentation&);
 
@@ -103,8 +109,8 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresenta
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(BinaryCodedRepresentation&& other) noexcept
 {
-    if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements, maybe unnecessary
-        throw std::runtime_error("incorrect number given or template args don't meet requirements in copy rRef ctor");
+    /*if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements, maybe unnecessary
+        throw std::runtime_error("incorrect number given or template args don't meet requirements in copy rRef ctor");*/
     systemBase = numeral_system;
     bitsPerDigit = bits_per_digit;
     originalRepresentation = reduceGivenNumber(other.originalRepresentation); //maybe unnecessary
@@ -268,9 +274,9 @@ std::string BinaryCodedRepresentation<numeral_system, bits_per_digit>::reduceGiv
 }
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
-unsigned int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getDecimalValue()
+unsigned int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getDecimalValue() const
 {
-    double retValue = 0;
+    double retValue = 0; //double since pow()
     double slotValue = 0;
     for( int i = 0; i < originalRepresentation.size(); ++i )
     {
@@ -358,8 +364,29 @@ bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator==(const
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator==(int rhsInt) const
 {
-    return getDecimalValue() == rhs.getDecimalValue();
+    if( rhsInt < 0 )
+        throw std::out_of_range("negative number given in operator==");
+    /*try
+    {
+        BinaryCodedRepresentation<numeral_system, bits_per_digit> temp(rhsInt);
+    }
+    catch(std::runtime_error& err)
+    {
+        std::cout << "nieodpowiednia liczba podana przy porownaniu\n";
+    }*/
+    BinaryCodedRepresentation<numeral_system, bits_per_digit> temp(rhsInt);
+    return *this == temp;
 }
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+bool BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator==(const std::string& rhsString) const
+{
+    BinaryCodedRepresentation<numeral_system, bits_per_digit> temp(rhsString);
+    return *this == temp;
+}
+
+
+
 /*template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(const char* numberLiteral)
 {
@@ -367,7 +394,18 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresenta
     return *this;
 }
 */
-/* -------------- FRIEND FUNCTIONS -------------- */
+/* -------------- FRIEND FUNCTIONS --------------
+ * Majority of friend functions are named like member methods so I decided to put their definitions in class itself in order
+ * to prevent issues with templates. These which aren't error prone are defined below.
+ */
+
+/*
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+bool operator==(int lhsInt, const BinaryCodedRepresentation<numeral_system, bits_per_digit>& rhsBCR)
+{
+    return rhsBCR.operator=(lhsInt);
+}
+*/
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 std::ostream& operator<<(std::ostream& os, const BinaryCodedRepresentation<numeral_system, bits_per_digit>& object)
 {

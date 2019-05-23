@@ -9,9 +9,17 @@ int main()
     //isdigit( static_cast<unsigned char>(ch) );
     //int t = static_cast<int>(ch);
     std::string x = "120";
-    BinaryCodedRepresentation<16, 4> testBCR("f1"); //check if correct
+    BinaryCodedRepresentation<8, 4> testBCR("11"); //check if correct
     BinaryCodedRepresentation<8, 4> testBCRoperators = "10";
     //testBCRoperators = "140";
+
+    std::cout << "rowne?\n"; //debug
+    std::string doCouta = testBCRoperators == 140 ? "tak" : "nie"; //debug
+    std::cout << doCouta << '\n'; //debug
+
+    std::cout << "rowne?\n"; //debug
+    std::string doCouta2 = 140 == testBCRoperators ? "tak" : "nie"; //debug
+    std::cout << doCouta2 << '\n'; //debug
 
     std::cout << testBCR.getDecimalValue() << " to " << testBCR << std::endl
               << testBCRoperators.getDecimalValue() << std::endl;
