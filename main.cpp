@@ -8,17 +8,22 @@ int main()
     //char ch = '1';
     //isdigit( static_cast<unsigned char>(ch) );
     //int t = static_cast<int>(ch);
-    std::string x = "120";
-    BinaryCodedRepresentation<8, 4> testBCR("11"); //check if correct
+
+    BinaryCodedRepresentation<36, 6> testBCR(35); //check if correct
     BinaryCodedRepresentation<8, 4> testBCRoperators = "10";
     //testBCRoperators = "140";
 
-    testBCRoperators = "2";
+    //testBCRoperators = "2";
 
-    std::cout << "wieksze?\n"; //debug
+//    bool BCRtestGreater = testBCR > testBCRoperators;
+//    bool BCRoperEqual = BinaryCodedRepresentation<8, 4>(10) > testBCRoperators;
+//    bool BCRtestLesser = testBCRoperators > testBCR;
+//    std::cout << BCRtestGreater << ' ' << BCRoperEqual << ' ' << BCRtestLesser << '\n';
+
+    /*std::cout << "wieksze?\n"; //debug
     std::string doCouta = testBCRoperators > std::string("180") ? "tak" : "nie"; //debug
     std::cout << doCouta << '\n'; //debug
-
+*/
 //    std::cout << "rowne?\n"; //debug
 //    std::string doCouta2 = 140 == testBCRoperators ? "tak" : "nie"; //debug
 //    std::cout << doCouta2 << '\n'; //debug
