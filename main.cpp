@@ -10,7 +10,9 @@ int main()
     //int t = static_cast<int>(ch);
 
     BinaryCodedRepresentation<36, 6> testBCR(35); //check if correct
-    BinaryCodedRepresentation<8, 4> testBCRoperators = "10";
+    BinaryCodedRepresentation<16, 4> testBCRoperators = "1f";
+    testBCRoperators += "-z"; //unable to calculate so it's good
+
     //testBCRoperators = "140";
 
     //testBCRoperators = "2";

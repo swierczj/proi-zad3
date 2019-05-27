@@ -12,11 +12,9 @@
 //#include <algorithm>
 #include <cctype>
 
+//forward declarations
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 class BinaryCodedRepresentation;
-
-//template <unsigned long numeral_system, unsigned long bits_per_digit>
-//bool operator==(int, const BinaryCodedRepresentation<numeral_system, bits_per_digit>&);
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 std::ostream& operator<<(std::ostream&, const BinaryCodedRepresentation<numeral_system, bits_per_digit>&);
@@ -48,6 +46,7 @@ private:
     void deleteBinaryRepArrays();
     void assignObjectToNumber(const std::string&);
     char getCharacterFromDecimalValue(int);
+    int getStringDecimalValue(const std::string&);
 public:
     explicit BinaryCodedRepresentation(const std::string& number = "0");
     explicit BinaryCodedRepresentation(unsigned int number = 0) : BinaryCodedRepresentation( getNumeralSystemRepresentationFromValue(number) ) {}; //explicit due to implicit conversion from const char* to unsigned int
@@ -116,6 +115,44 @@ public:
     BinaryCodedRepresentation& operator+=(int);
     BinaryCodedRepresentation& operator+=(const std::string&);
     BinaryCodedRepresentation& operator+=(const char* rhsCharPtr) { return( this -> operator+=( std::string(rhsCharPtr) ) ); }
+
+    BinaryCodedRepresentation& operator-=(const BinaryCodedRepresentation&);
+    BinaryCodedRepresentation& operator-=(int);
+    BinaryCodedRepresentation& operator-=(const std::string&);
+    BinaryCodedRepresentation& operator-=(const char* rhsCharPtr) { return( this -> operator-=( std::string(rhsCharPtr) ) ); }
+
+    BinaryCodedRepresentation& operator*=(const BinaryCodedRepresentation&);
+    BinaryCodedRepresentation& operator*=(int);
+    BinaryCodedRepresentation& operator*=(const std::string&);
+    BinaryCodedRepresentation& operator*=(const char* rhsCharPtr) { return( this -> operator*=( std::string(rhsCharPtr) ) ); }
+
+    BinaryCodedRepresentation& operator/=(const BinaryCodedRepresentation&);
+    BinaryCodedRepresentation& operator/=(int);
+    BinaryCodedRepresentation& operator/=(const std::string&);
+    BinaryCodedRepresentation& operator/=(const char* rhsCharPtr) { return( this -> operator/=( std::string(rhsCharPtr) ) ); }
+
+    BinaryCodedRepresentation& operator++(); //prefix
+    BinaryCodedRepresentation& operator--();
+
+    const BinaryCodedRepresentation operator++(int); //postfix
+    const BinaryCodedRepresentation operator--(int);
+
+    friend BinaryCodedRepresentation operator+(BinaryCodedRepresentation lhs, const BinaryCodedRepresentation& rhs) { lhs += rhs; return lhs; }
+    friend BinaryCodedRepresentation operator+(BinaryCodedRepresentation lhs, int rhsInt) { lhs += rhsInt; return lhs; }
+    friend BinaryCodedRepresentation operator+(int lhsInt, const BinaryCodedRepresentation& rhs) { return( operator+(rhs, lhsInt) ); }
+    friend BinaryCodedRepresentation operator+(BinaryCodedRepresentation lhs, const std::string& rhsString) { int decimalValue = lhs.getStringDecimalValue(rhsString); return lhs += decimalValue; }
+    friend BinaryCodedRepresentation operator+(const std::string& lhsString, BinaryCodedRepresentation rhs) { return rhs + lhsString; }
+    friend BinaryCodedRepresentation operator+(const char* lhsCharPtr, BinaryCodedRepresentation& rhs) { return operator+( std::string(lhsCharPtr), rhs ); }
+    friend BinaryCodedRepresentation operator+(BinaryCodedRepresentation lhs, const char* rhsCharPtr) { return operator+( lhs, std::string(rhsCharPtr) ); }
+
+    /* TODO */
+    friend BinaryCodedRepresentation operator-(BinaryCodedRepresentation lhs, const BinaryCodedRepresentation& rhs) { lhs += rhs; return lhs; }
+    friend BinaryCodedRepresentation operator-(BinaryCodedRepresentation lhs, int rhsInt) { lhs += rhsInt; return lhs; }
+    friend BinaryCodedRepresentation operator-(int lhsInt, const BinaryCodedRepresentation& rhs) { return( operator+(rhs, lhsInt) ); }
+    friend BinaryCodedRepresentation operator-(BinaryCodedRepresentation lhs, const std::string& rhsString) { int decimalValue = lhs.getStringDecimalValue(rhsString); return lhs += decimalValue; }
+    friend BinaryCodedRepresentation operator-(const std::string& lhsString, BinaryCodedRepresentation rhs) { return rhs + lhsString; }
+    friend BinaryCodedRepresentation operator-(const char* lhsCharPtr, BinaryCodedRepresentation& rhs) { return operator+( std::string(lhsCharPtr), rhs ); }
+    friend BinaryCodedRepresentation operator-(BinaryCodedRepresentation lhs, const char* rhsCharPtr) { return operator+( lhs, std::string(rhsCharPtr) ); }
 
     friend std::ostream& operator<< <numeral_system, bits_per_digit>(std::ostream&, const BinaryCodedRepresentation&);
 
@@ -294,7 +331,7 @@ void BinaryCodedRepresentation<numeral_system, bits_per_digit>::fillSlotAtGivenP
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getCharactersDecimalValue(char ch)
 {
-    int retValue;
+    int retValue = 0;
     if( isdigit( static_cast<unsigned char>(ch) ) )
         retValue = ch - ( DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT + 1 );
     else
@@ -399,6 +436,28 @@ char BinaryCodedRepresentation<numeral_system, bits_per_digit>::getCharacterFrom
     }
     else
         return '-'; //useful for debug
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+int BinaryCodedRepresentation<numeral_system, bits_per_digit>::getStringDecimalValue(const std::string& toCalculate)
+{
+    int retVal = 0;
+    std::string temp;
+
+    if( toCalculate.at(0) == '-' )
+        temp = toCalculate.substr(1);
+    else
+        temp = toCalculate;
+
+    if( !( isStringCorrect(temp) ) )
+        throw std::runtime_error( "unable to calculate string value in +=" );
+
+    for( int i = 0; i < temp.size(); ++i )
+        retVal = retVal + ( getCharactersDecimalValue( temp.at(i) ) * pow( numeral_system, temp.size() - i - 1 ) );
+
+    if( temp.size() == toCalculate.size() - 1 ) //if the '-' sign was discarded
+        return -retVal;
+    return retVal;
 }
 
 /* -------------- OPERATORS -------------- */
@@ -556,11 +615,130 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresenta
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator+=(const std::string& rhsString)
 {
-    /* TODO negative numbers(?)*/
-    BinaryCodedRepresentation<numeral_system, bits_per_digit> temp(rhsString);
-    auto resultDecimalValue = this -> getDecimalValue() + temp.getDecimalValue();
+    this -> operator+=( getStringDecimalValue(rhsString) ); //call int operator
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator-=(const BinaryCodedRepresentation& rhs)
+{
+    if( this -> getStringDecimalValue() < rhs.getDecimalValue() )
+        throw std::out_of_range( "trying to make BC number negative in -=" );
+
+    auto resultDecimalValue = this -> getDecimalValue() - rhs.getDecimalValue();
     this -> operator=(resultDecimalValue);
     return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator-=(int rhsInt)
+{
+    if( rhsInt < 0 )
+    {
+        int absValue = -rhsInt;
+        return this -> operator+=(absValue);
+    }
+
+    if( this -> getDecimalValue() < rhsInt )
+        throw std::out_of_range( "trying to make BC number negative in -=" );
+
+    auto resultDecimalValue = this -> getDecimalValue() - rhsInt;
+
+    this -> operator=(resultDecimalValue);
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator-=(const std::string& rhsString)
+{
+    this -> operator-=( getStringDecimalValue(rhsString) ); //call int operator
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator*=(const BinaryCodedRepresentation& rhs)
+{
+    auto newValue = this -> getDecimalValue() * rhs.getDecimalValue();
+    this -> operator=(newValue);
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator*=(int rhsInt)
+{
+    if( rhsInt < 0 )
+        throw std::out_of_range( "trying to make BC number negative in *=" );
+
+    auto resultDecimalValue = this -> getDecimalValue() * rhsInt;
+
+    this -> operator=(resultDecimalValue);
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator*=(const std::string& rhsString)
+{
+    this -> operator*=( getStringDecimalValue(rhsString) ); //call int operator
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator/=(const BinaryCodedRepresentation& rhs)
+{
+    if( rhs.getDecimalValue() == 0 )
+        throw std::out_of_range( "trying to divide by 0 in /=");
+
+    auto newValue = this -> getDecimalValue() / rhs.getDecimalValue();
+    this -> operator=(newValue);
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator/=(int rhsInt)
+{
+    if( rhsInt <= 0 )
+        throw std::out_of_range( "trying to divide by 0 or negative number in /=");
+
+    auto newValue = this -> getDecimalValue() / rhsInt;
+    this -> operator=(newValue);
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator/=(const std::string& rhsString)
+{
+    this -> operator/=( getStringDecimalValue(rhsString) ); //call int operator
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator++()
+{
+    this -> operator+=(1);
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator--()
+{
+    this -> operator-=(1);
+    return *this;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+const BinaryCodedRepresentation<numeral_system, bits_per_digit> BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator++(int)
+{
+    BinaryCodedRepresentation result(*this);
+    ++(*this);
+    return result;
+}
+
+template <unsigned long numeral_system, unsigned long bits_per_digit>
+const BinaryCodedRepresentation<numeral_system, bits_per_digit> BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator--(int)
+{
+    BinaryCodedRepresentation result(*this);
+    --(*this);
+    return result;
 }
 
 /*template <unsigned long numeral_system, unsigned long bits_per_digit>
