@@ -3,7 +3,7 @@
 #define MAX_NUMERAL_SYSTEM 36 //alphanuemerical chars, non-case sensitive
 #define MIN_NUMERAL_SYSTEM 2 //unary system is useless
 #define DISTANCE_BETWEEN_BASE_AND_LAST_CHARACTER 86 //used for lower case
-#define DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT 47
+#define DISTANCE_BETWEEN_BASE_AND_LAST_DIGIT 47 //for decimal and lesser base
 #include <string>
 #include <iostream>
 #include <stdexcept>
@@ -147,18 +147,12 @@ public:
     friend BinaryCodedRepresentation operator+(const char* lhsCharPtr, BinaryCodedRepresentation& rhs) { return operator+( std::string(lhsCharPtr), rhs ); }
     friend BinaryCodedRepresentation operator+(BinaryCodedRepresentation lhs, const char* rhsCharPtr) { return operator+( lhs, std::string(rhsCharPtr) ); }
 
-    /* TODO */
     friend BinaryCodedRepresentation operator-(BinaryCodedRepresentation lhs, const BinaryCodedRepresentation& rhs) { lhs -= rhs; return lhs; }
     friend BinaryCodedRepresentation operator-(BinaryCodedRepresentation lhs, int rhsInt) { lhs -= rhsInt; return lhs; }
     friend BinaryCodedRepresentation operator-(int lhsInt, const BinaryCodedRepresentation& rhs)
     {
         if( lhsInt < 0 )
             throw std::out_of_range( "trying to make BC number negative in int - BCR operator" );
-        //int newValue = lhsInt - rhs.getDecimalValue();
-        ////if( lhsInt < 0 || ( lhsInt == 0 && rhs.getDecimalValue() != 0 ) || lhsInt < rhs.getDecimalValue() )
-        //if( newValue < 0 )
-        //    throw std::out_of_range( "trying to make BC number negative in int - BCR operator" );
-
         return BinaryCodedRepresentation(lhsInt)-= rhs; //should work
     }
     friend BinaryCodedRepresentation operator-(BinaryCodedRepresentation lhs, const std::string& rhsString) { int decimalValue = lhs.getStringDecimalValue(rhsString); return lhs -= decimalValue; }
@@ -188,7 +182,6 @@ public:
     friend BinaryCodedRepresentation operator/(const char* lhsCharPtr, BinaryCodedRepresentation& rhs) { return operator/( std::string(lhsCharPtr), rhs ); }
     friend BinaryCodedRepresentation operator/(BinaryCodedRepresentation lhs, const char* rhsCharPtr) { return operator/( lhs, std::string(rhsCharPtr) ); }
 
-    /* TODO istream overloaded */
     friend std::ostream& operator<< <numeral_system, bits_per_digit>(std::ostream&, const BinaryCodedRepresentation&);
     friend std::istream& operator>> <numeral_system, bits_per_digit>(std::istream&, BinaryCodedRepresentation&);
 
@@ -208,13 +201,6 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresenta
     setBinaryRepresentation();
 }
 
-/*template <unsigned long numeral_system, unsigned long bits_per_digit>
-BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(unsigned int number)
-: BinaryCodedRepresentation( std::to_string(number) )
-{
-    worked
-}
-*/
 
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(const BinaryCodedRepresentation& other)
@@ -231,8 +217,6 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresenta
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>::BinaryCodedRepresentation(BinaryCodedRepresentation&& other) noexcept
 {
-    /*if( !isInputCorrect(other.originalRepresentation) ) //compare with this object requirements, maybe unnecessary
-        throw std::runtime_error("incorrect number given or template args don't meet requirements in copy rRef ctor");*/
     systemBase = numeral_system;
     bitsPerDigit = bits_per_digit;
     originalRepresentation = reduceGivenNumber(other.originalRepresentation); //maybe unnecessary
@@ -384,7 +368,11 @@ std::string BinaryCodedRepresentation<numeral_system, bits_per_digit>::getNumera
     if( to_convert < 0 )
         return std::string("-"); //non alphanumeric character
 
-    const int bitsPerGivenNumber = static_cast<int>( floor( log( to_convert ) / log( numeral_system ) ) + 1 );
+    int bitsPerGivenNumber = 1; //applied for 0  /*static_cast<int>( floor( log( to_convert ) / log( numeral_system ) ) + 1 )*/;
+    if( to_convert > 0 )
+        bitsPerGivenNumber = static_cast<int>( floor( log( to_convert ) / log( numeral_system ) ) + 1 );
+    //else to_convert == 0, so it's 1 bit
+
     int intsBuffer[bitsPerGivenNumber];
     for( int i = 0; i < bitsPerGivenNumber; ++i )
     {
@@ -658,7 +646,7 @@ BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresenta
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator-=(const BinaryCodedRepresentation& rhs)
 {
-    if( this -> getStringDecimalValue() < rhs.getDecimalValue() )
+    if( this -> getDecimalValue() < rhs.getDecimalValue() )
         throw std::out_of_range( "trying to make BC number negative in -=" );
 
     auto resultDecimalValue = this -> getDecimalValue() - rhs.getDecimalValue();
@@ -777,25 +765,11 @@ const BinaryCodedRepresentation<numeral_system, bits_per_digit> BinaryCodedRepre
     return result;
 }
 
-/*template <unsigned long numeral_system, unsigned long bits_per_digit>
-BinaryCodedRepresentation<numeral_system, bits_per_digit>& BinaryCodedRepresentation<numeral_system, bits_per_digit>::operator=(const char* numberLiteral)
-{
-    operator=( std::string(numberLiteral) );
-    return *this;
-}
-*/
-/* -------------- FRIEND FUNCTIONS --------------
+/** -------------- FRIEND FUNCTIONS --------------
  * Majority of friend functions are named like member methods so I decided to put their definitions in class itself in order
  * to prevent issues with templates. These which aren't error prone are defined below.
- */
+ **/
 
-/*
-template <unsigned long numeral_system, unsigned long bits_per_digit>
-bool operator==(int lhsInt, const BinaryCodedRepresentation<numeral_system, bits_per_digit>& rhsBCR)
-{
-    return rhsBCR.operator=(lhsInt);
-}
-*/
 template <unsigned long numeral_system, unsigned long bits_per_digit>
 std::ostream& operator<<(std::ostream& os, const BinaryCodedRepresentation<numeral_system, bits_per_digit>& object)
 {
